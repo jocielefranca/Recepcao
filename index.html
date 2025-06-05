@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Recepção</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #27ae60 0%, #2d8650 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #1e8449, #27ae60);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 5px solid #27ae60;
+        }
+        
+        .form-section h2 {
+            color: #1e8449;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e8449;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #27ae60, #1e8449);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .btn-small {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+        
+        .records-section {
+            background: white;
+        }
+        
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .records-header h2 {
+            color: #1e8449;
+            font-size: 1.8rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            opacity: 0.9;
+        }
+        
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #1e8449;
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-aguardando {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-ematendimento {
+            background: #d1f2eb;
+            color: #0c5460;
+        }
+        
+        .status-concluido {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .filters {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Sistema de Controle de Recepção</h1>
+            <p>Gerencie visitantes, clientes e fornecedores de forma eficiente</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="form-section">
+                <h2>📝 Registrar Nova Visita</h2>
+                <form id="visitForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nomeVisitante">Nome do Visitante *</label>
+                            <input type="text" id="nomeVisitante" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresaOrigem">Empresa/Origem</label>
+                            <input type="text" id="empresaOrigem">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipoVisitante">Tipo de Visitante *</label>
+                            <select id="tipoVisitante" required>
+                                <option value="">Selecione...</option>
+                                <option value="Cliente">Cliente</option>
+                                <option value="Parceiro">Parceiro</option>
+                                <option value="Fornecedor">Fornecedor</option>
+                                <option value="Entregador">Entregador</option>
+                                <option value="Prestador de Serviço">Prestador de Serviço</option>
+                                <option value="Candidato">Candidato</option>
+                                <option value="Visitante Institucional">Visitante Institucional</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone</label>
+                            <input type="tel" id="telefone" placeholder="(11) 99999-9999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="areaProcurada">Área Procurada *</label>
+                        <select id="areaProcurada" required>
+                            <option value="">Selecione...</option>
+                            <option value="Administração">Administração</option>
+                            <option value="Vendas/Comercial">Vendas/Comercial</option>
+                            <option value="Suprimentos">Suprimentos</option>
+                            <option value="Financeiro">Financeiro</option>
+                            <option value="Gente e Gestão">Gente e Gestão</option>
+                            <option value="TI/Tecnologia">TI/Tecnologia</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Engenharia">Engenharia</option>
+                            <option value="Diretoria">Diretoria</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Jurídico">Jurídico</option>
+                            <option value="Relacionamento com o Cliente">Relacionamento com o Cliente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="responsavel">Responsável/Contato *</label>
+                        <input type="text" id="responsavel" required placeholder="Nome da pessoa que vai receber">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="motivoVisita">Motivo da Visita</label>
+                        <textarea id="motivoVisita" rows="3" placeholder="Breve descrição do objetivo da visita"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">✅ Registrar Entrada</button>
+                </form>
+            </div>
+            
+            <div class="records-section">
+                <div class="records-header">
+                    <h2>📊 Controle de Visitantes</h2>
+                    <div class="export-buttons">
+                        <button class="btn btn-small" onclick="sistema.exportarExcel()">📊 Excel</button>
+                        <button class="btn btn-small" onclick="sistema.exportarPDF()">📄 PDF</button>
+                        <button class="btn btn-small" onclick="sistema.exportarBackup()">💾 Backup</button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="sistema.importarBackup(this)">
+                        <button class="btn btn-small" onclick="document.getElementById('importFile').click()">📂 Importar</button>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3 id="totalHoje">0</h3>
+                        <p>Hoje</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="aguardando">0</h3>
+                        <p>Aguardando</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="emAtendimento">0</h3>
+                        <p>Em Atendimento</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="concluidos">0</h3>
+                        <p>Concluídos</p>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <select id="filtroTipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="Cliente">Cliente</option>
+                        <option value="Fornecedor">Fornecedor</option>
+                        <option value="Entregador">Entregador</option>
+                    </select>
+                    <select id="filtroArea">
+                        <option value="">Todas as áreas</option>
+                        <option value="Administração">Administração</option>
+                        <option value="Vendas/Comercial">Vendas/Comercial</option>
+                        <option value="Suprimentos">Suprimentos</option>
+                        <option value="Gente e Gestão">Gente e Gestão</option>
+                        <option value="Engenharia">Engenharia</option>
+                        <option value="Relacionamento com o Cliente">Relacionamento com o Cliente</option>
+                    </select>
+                    <select id="filtroStatus">
+                        <option value="">Todos os status</option>
+                        <option value="Aguardando">Aguardando</option>
+                        <option value="Em Atendimento">Em Atendimento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Entrada</th>
+                                <th>Visitante</th>
+                                <th>Tipo</th>
+                                <th>Área</th>
+                                <th>Responsável</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitasTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SistemaRecepcao {
+            constructor() {
+                this.visitas = JSON.parse(localStorage.getItem('visitas')) || [];
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.renderTabela();
+                this.atualizarStats();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('visitForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.adicionarVisita();
+                });
+                
+                ['filtroTipo', 'filtroArea', 'filtroStatus'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => {
+                        this.renderTabela();
+                    });
+                });
+            }
+            
+            adicionarVisita() {
+                const agora = new Date();
+                const visita = {
+                    id: Date.now(),
+                    data: agora.toLocaleDateString('pt-BR'),
+                    horaEntrada: agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}),
+                    nome: document.getElementById('nomeVisitante').value,
+                    empresa: document.getElementById('empresaOrigem').value,
+                    tipo: document.getElementById('tipoVisitante').value,
+                    telefone: document.getElementById('telefone').value,
+                    area: document.getElementById('areaProcurada').value,
+                    responsavel: document.getElementById('responsavel').value,
+                    motivo: document.getElementById('motivoVisita').value,
+                    status: 'Aguardando',
+                    horaSaida: '',
+                    observacoes: ''
+                };
+                
+                this.visitas.unshift(visita);
+                this.salvarDados();
+                this.renderTabela();
+                this.atualizarStats();
+                this.limparFormulario();
+                
+                alert('✅ Visita registrada com sucesso!');
+            }
+            
+            atualizarStatus(id, novoStatus) {
+                const visitaIndex = this.visitas.findIndex(v => v.id === id);
+                if (visitaIndex !== -1) {
+                    this.visitas[visitaIndex].status = novoStatus;
+                    
+                    if (novoStatus === 'Concluído' && !this.visitas[visitaIndex].horaSaida) {
+                        const agora = new Date();
+                        this.visitas[visitaIndex].horaSaida = agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                    }
+                    
+                    this.salvarDados();
+                    this.renderTabela();
+                    this.atualizarStats();
+                }
+            }
+            
+            excluirVisita(id) {
+                if (confirm('Tem certeza que deseja excluir este registro?')) {
+                    this.visitas = this.visitas.filter(v => v.id !== id);
+                    this.salvarDados();
+                    this.renderTabela();
+                    this.atualizarStats();
+                }
+            }
+            
+            renderTabela() {
+                const tbody = document.getElementById('visitasTableBody');
+                const filtroTipo = document.getElementById('filtroTipo').value;
+                const filtroArea = document.getElementById('filtroArea').value;
+                const filtroStatus = document.getElementById('filtroStatus').value;
+                
+                let visitasFiltradas = this.visitas.filter(visita => {
+                    return (!filtroTipo || visita.tipo === filtroTipo) &&
+                           (!filtroArea || visita.area === filtroArea) &&
+                           (!filtroStatus || visita.status === filtroStatus);
+                });
+                
+                tbody.innerHTML = visitasFiltradas.map(visita => `
+                    <tr>
+                        <td>
+                            <strong>${visita.horaEntrada}</strong><br>
+                            <small>${visita.data}</small>
+                        </td>
+                        <td>
+                            <strong>${visita.nome}</strong><br>
+                            <small>${visita.empresa || 'N/A'}</small>
+                        </td>
+                        <td>${visita.tipo}</td>
+                        <td>${visita.area}</td>
+                        <td>${visita.responsavel}</td>
+                        <td>
+                            <span class="status status-${visita.status.toLowerCase().replace(' ', '')}">${visita.status}</span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                ${visita.status === 'Aguardando' ? 
+                                    `<button class="btn btn-small btn-success" onclick="sistema.atualizarStatus(${visita.id}, 'Em Atendimento')">Atender</button>` : 
+                                    ''
+                                }
+                                ${visita.status === 'Em Atendimento' ? 
+                                    `<button class="btn btn-small btn-success" onclick="sistema.atualizarStatus(${visita.id}, 'Concluído')">Finalizar</button>` : 
+                                    ''
+                                }
+                                <button class="btn btn-small btn-danger" onclick="sistema.excluirVisita(${visita.id})">Excluir</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            atualizarStats() {
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                const visitasHoje = this.visitas.filter(v => v.data === hoje);
+                
+                document.getElementById('totalHoje').textContent = visitasHoje.length;
+                document.getElementById('aguardando').textContent = this.visitas.filter(v => v.status === 'Aguardando').length;
+                document.getElementById('emAtendimento').textContent = this.visitas.filter(v => v.status === 'Em Atendimento').length;
+                document.getElementById('concluidos').textContent = visitasHoje.filter(v => v.status === 'Concluído').length;
+            }
+            
+            limparFormulario() {
+                document.getElementById('visitForm').reset();
+            }
+            
+            salvarDados() {
+                localStorage.setItem('visitas', JSON.stringify(this.visitas));
+            }
+            
+            // Funcionalidades de Export/Import
+            exportarExcel() {
+                const dados = this.visitas.map(visita => ({
+                    'Data': visita.data,
+                    'Hora Entrada': visita.horaEntrada,
+                    'Nome': visita.nome,
+                    'Empresa': visita.empresa || '',
+                    'Tipo': visita.tipo,
+                    'Telefone': visita.telefone || '',
+                    'Área': visita.area,
+                    'Responsável': visita.responsavel,
+                    'Motivo': visita.motivo || '',
+                    'Status': visita.status,
+                    'Hora Saída': visita.horaSaida || '',
+                    'Observações': visita.observacoes || ''
+                }));
+                
+                this.downloadCSV(dados, 'controle-recepcao');
+            }
+            
+            exportarPDF() {
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                const visitasHoje = this.visitas.filter(v => v.data === hoje);
+                
+                let conteudo = `
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Relatório de Recepção - ${hoje}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            .header { text-align: center; margin-bottom: 30px; }
+                            .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+                            .stat { text-align: center; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+                            th { background-color: #1e8449; color: white; }
+                            .status { padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+                            .status-aguardando { background: #fff3cd; }
+                            .status-atendimento { background: #d1f2eb; }
+                            .status-concluido { background: #d4edda; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>📋 Relatório de Recepção</h1>
+                            <h2>Data: ${hoje}</h2>
+                        </div>
+                        
+                        <div class="stats">
+                            <div class="stat">
+                                <h3>${visitasHoje.length}</h3>
+                                <p>Total de Visitas</p>
+                            </div>
+                            <div class="stat">
+                                <h3>${visitasHoje.filter(v => v.status === 'Aguardando').length}</h3>
+                                <p>Aguardando</p>
+                            </div>
+                            <div class="stat">
+                                <h3>${visitasHoje.filter(v => v.status === 'Em Atendimento').length}</h3>
+                                <p>Em Atendimento</p>
+                            </div>
+                            <div class="stat">
+                                <h3>${visitasHoje.filter(v => v.status === 'Concluído').length}</h3>
+                                <p>Concluídos</p>
+                            </div>
+                        </div>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Visitante</th>
+                                    <th>Empresa</th>
+                                    <th>Tipo</th>
+                                    <th>Área</th>
+                                    <th>Responsável</th>
+                                    <th>Status</th>
+                                    <th>Saída</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                visitasHoje.forEach(visita => {
+                    conteudo += `
+                        <tr>
+                            <td>${visita.horaEntrada}</td>
+                            <td>${visita.nome}</td>
+                            <td>${visita.empresa || '-'}</td>
+                            <td>${visita.tipo}</td>
+                            <td>${visita.area}</td>
+                            <td>${visita.responsavel}</td>
+                            <td><span class="status status-${visita.status.toLowerCase().replace(' ', '')}">${visita.status}</span></td>
+                            <td>${visita.horaSaida || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                conteudo += `
+                            </tbody>
+                        </table>
+                        
+                        <div style="margin-top: 30px; font-size: 12px; color: #666;">
+                            <p>Relatório gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                
+                const novaJanela = window.open('', '_blank');
+                novaJanela.document.write(conteudo);
+                novaJanela.document.close();
+                novaJanela.print();
+            }
+            
+            exportarBackup() {
+                const backup = {
+                    data: new Date().toISOString(),
+                    versao: '1.0',
+                    total_registros: this.visitas.length,
+                    visitas: this.visitas
+                };
+                
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+                this.downloadFile(dataBlob, `backup-recepcao-${hoje}.json`);
+                
+                alert(`✅ Backup criado com sucesso!\n📁 Arquivo: backup-recepcao-${hoje}.json\n📊 Total de registros: ${this.visitas.length}`);
+            }
+            
+            importarBackup(input) {
+                const file = input.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const backup = JSON.parse(e.target.result);
+                        
+                        if (!backup.visitas || !Array.isArray(backup.visitas)) {
+                            throw new Error('Formato de backup inválido');
+                        }
+                        
+                        const confirmacao = confirm(
+                            `📂 Importar Backup\n\n` +
+                            `📅 Data do backup: ${new Date(backup.data).toLocaleString('pt-BR')}\n` +
+                            `📊 Registros no backup: ${backup.total_registros}\n` +
+                            `📊 Registros atuais: ${this.visitas.length}\n\n` +
+                            `⚠️ Isso substituirá todos os dados atuais.\n` +
+                            `Deseja continuar?`
+                        );
+                        
+                        if (confirmacao) {
+                            this.visitas = backup.visitas;
+                            this.salvarDados();
+                            this.renderTabela();
+                            this.atualizarStats();
+                            alert('✅ Backup importado com sucesso!');
+                        }
+                    } catch (error) {
+                        alert('❌ Erro ao importar backup: ' + error.message);
+                    }
+                    
+                    // Limpar o input
+                    input.value = '';
+                };
+                reader.readAsText(file);
+            }
+            
+            downloadCSV(dados, nomeArquivo) {
+                if (dados.length === 0) {
+                    alert('❌ Não há dados para exportar!');
+                    return;
+                }
+                
+                const headers = Object.keys(dados[0]);
+                const csvContent = [
+                    headers.join(','),
+                    ...dados.map(row => headers.map(header => {
+                        const value = row[header] || '';
+                        return `"${value.toString().replace(/"/g, '""')}"`;
+                    }).join(','))
+                ].join('\n');
+                
+                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+                this.downloadFile(blob, `${nomeArquivo}-${hoje}.csv`);
+                
+                alert(`✅ Planilha Excel exportada com sucesso!\n📁 Arquivo: ${nomeArquivo}-${hoje}.csv\n📊 Total de registros: ${dados.length}`);
+            }
+            
+            downloadFile(blob, nomeArquivo) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = nomeArquivo;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }
+        }
+        
+        // Inicializar o sistema
+        const sistema = new SistemaRecepcao();
+    </script>
+</body>
+</html>
