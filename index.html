@@ -370,16 +370,27 @@
                     <select id="filtroTipo">
                         <option value="">Todos os tipos</option>
                         <option value="Cliente">Cliente</option>
+                        <option value="Parceiro">Parceiro</option>
                         <option value="Fornecedor">Fornecedor</option>
                         <option value="Entregador">Entregador</option>
+                        <option value="Prestador de Serviço">Prestador de Serviço</option>
+                        <option value="Candidato">Candidato</option>
+                        <option value="Visitante Institucional">Visitante Institucional</option>
+                        <option value="Outros">Outros</option>
                     </select>
                     <select id="filtroArea">
                         <option value="">Todas as áreas</option>
                         <option value="Administração">Administração</option>
                         <option value="Vendas/Comercial">Vendas/Comercial</option>
                         <option value="Suprimentos">Suprimentos</option>
+                        <option value="Financeiro">Financeiro</option>
                         <option value="Gente e Gestão">Gente e Gestão</option>
+                        <option value="TI/Tecnologia">TI/Tecnologia</option>
+                        <option value="Produção">Produção</option>
                         <option value="Engenharia">Engenharia</option>
+                        <option value="Diretoria">Diretoria</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Jurídico">Jurídico</option>
                         <option value="Relacionamento com o Cliente">Relacionamento com o Cliente</option>
                     </select>
                     <select id="filtroStatus">
@@ -740,25 +751,5 @@
                 ].join('\n');
                 
                 const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-                const hoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-                this.downloadFile(blob, `${nomeArquivo}-${hoje}.csv`);
-                
-                alert(`✅ Planilha Excel exportada com sucesso!\n📁 Arquivo: ${nomeArquivo}-${hoje}.csv\n📊 Total de registros: ${dados.length}`);
-            }
-            
-            downloadFile(blob, nomeArquivo) {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = nomeArquivo;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            }
-        }
-        
-        // Inicializar o sistema
-        const sistema = new SistemaRecepcao();
-    </script>
-</body>
+                const hoje = new Date().toLocaleDateString('pt-BR').replace(/
 </html>
