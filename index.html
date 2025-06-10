@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Controle de Recepção - Multi-usuário</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -480,6 +477,18 @@
                 flex-direction: column;
             }
         }
+        
+        /* Novos estilos para validação */
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .input-error {
+            border-color: #e74c3c !important;
+        }
     </style>
 </head>
 <body>
@@ -540,6 +549,7 @@
                             <div class="form-group">
                                 <label for="nomeVisitante"><i class="fas fa-user"></i> Nome do Visitante *</label>
                                 <input type="text" id="nomeVisitante" required>
+                                <div class="error-message" id="nomeVisitanteError">Por favor, preencha este campo</div>
                             </div>
                             <div class="form-group">
                                 <label for="empresaOrigem"><i class="fas fa-building"></i> Empresa/Origem</label>
@@ -561,6 +571,7 @@
                                     <option value="Visitante Institucional">Visitante Institucional</option>
                                     <option value="Outros">Outros</option>
                                 </select>
+                                <div class="error-message" id="tipoVisitanteError">Por favor, selecione uma opção</div>
                             </div>
                             <div class="form-group">
                                 <label for="telefone"><i class="fas fa-phone"></i> Telefone</label>
@@ -588,11 +599,13 @@
                                 <option value="Relacionamento com o Cliente">Relacionamento com o Cliente</option>
                                 <option value="Outros">Outros</option>
                             </select>
+                            <div class="error-message" id="areaProcuradaError">Por favor, selecione uma área</div>
                         </div>
                         
                         <div class="form-group">
                             <label for="responsavel"><i class="fas fa-user-tie"></i> Responsável/Contato *</label>
                             <input type="text" id="responsavel" required placeholder="Nome da pessoa que vai receber">
+                            <div class="error-message" id="responsavelError">Por favor, preencha este campo</div>
                         </div>
                         
                         <div class="form-group">
@@ -762,15 +775,128 @@
                 // Evento do formulário
                 document.getElementById('visitForm').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.adicionarVisita();
+                    if (this.validarFormulario()) {
+                        this.adicionarVisita();
+                    }
                 });
                 
+                // Adiciona validação em tempo real aos campos
+                this.configurarValidacao();
+                
                 // Carrega dados iniciais
-                this.atualizarVisitas();
-                this.atualizarDashboard();
+                this.carregarDadosIniciais();
                 
                 // Atualiza status de sincronização
                 this.atualizarStatusSync();
+            },
+            
+            // Configura validação em tempo real
+            configurarValidacao: function() {
+                const camposObrigatorios = ['nomeVisitante', 'tipoVisitante', 'areaProcurada', 'responsavel'];
+                
+                camposObrigatorios.forEach(campo => {
+                    const elemento = document.getElementById(campo);
+                    elemento.addEventListener('blur', () => {
+                        this.validarCampo(elemento);
+                    });
+                });
+            },
+            
+            // Valida um campo individual
+            validarCampo: function(elemento) {
+                const errorElement = document.getElementById(`${elemento.id}Error`);
+                
+                if (elemento.value.trim() === '') {
+                    elemento.classList.add('input-error');
+                    errorElement.style.display = 'block';
+                    return false;
+                } else {
+                    elemento.classList.remove('input-error');
+                    errorElement.style.display = 'none';
+                    return true;
+                }
+            },
+            
+            // Valida todo o formulário
+            validarFormulario: function() {
+                let valido = true;
+                const camposObrigatorios = ['nomeVisitante', 'tipoVisitante', 'areaProcurada', 'responsavel'];
+                
+                camposObrigatorios.forEach(campo => {
+                    const elemento = document.getElementById(campo);
+                    if (!this.validarCampo(elemento)) {
+                        valido = false;
+                    }
+                });
+                
+                return valido;
+            },
+            
+            // Carrega dados iniciais
+            carregarDadosIniciais: function() {
+                // Mostra o indicador de carregamento
+                const tbody = document.getElementById('visitasTableBody');
+                tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="loading-spinner"></div></td></tr>';
+                
+                // Simula carregamento de dados
+                setTimeout(() => {
+                    if (this.config.dadosLocais.length === 0) {
+                        // Carrega dados de exemplo se não houver dados locais
+                        this.carregarDadosExemplo();
+                    } else {
+                        // Atualiza a interface com dados existentes
+                        this.atualizarVisitas();
+                    }
+                    this.atualizarDashboard();
+                }, 800);
+            },
+            
+            // Carrega dados de exemplo
+            carregarDadosExemplo: function() {
+                this.config.dadosLocais = [
+                    {
+                        id: 1,
+                        nome: "Carlos Silva",
+                        empresa: "Tech Solutions",
+                        tipo: "Fornecedor",
+                        telefone: "(11) 98765-4321",
+                        area: "TI/Tecnologia",
+                        responsavel: "Ana Paula",
+                        motivo: "Reunião sobre servidores",
+                        data: new Date().toLocaleDateString('pt-BR'),
+                        horas: new Date().toLocaleTimeString('pt-BR'),
+                        status: "Aguardando"
+                    },
+                    {
+                        id: 2,
+                        nome: "Mariana Oliveira",
+                        empresa: "Global Corp",
+                        tipo: "Cliente",
+                        telefone: "(11) 91234-5678",
+                        area: "Vendas/Comercial",
+                        responsavel: "Roberto Santos",
+                        motivo: "Negociação de contrato",
+                        data: new Date().toLocaleDateString('pt-BR'),
+                        horas: new Date().toLocaleTimeString('pt-BR'),
+                        status: "Em Atendimento"
+                    },
+                    {
+                        id: 3,
+                        nome: "Ricardo Fernandes",
+                        empresa: "InovaTech",
+                        tipo: "Parceiro",
+                        telefone: "(11) 99876-5432",
+                        area: "Marketing",
+                        responsavel: "Juliana Costa",
+                        motivo: "Planejamento campanha",
+                        data: new Date().toLocaleDateString('pt-BR'),
+                        horas: new Date().toLocaleTimeString('pt-BR'),
+                        status: "Concluído"
+                    }
+                ];
+                
+                localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
+                this.atualizarVisitas();
             },
             
             // Troca de abas
@@ -859,7 +985,7 @@
                     this.config.dadosLocais.push(visita);
                     localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
                     
-                    // Envia para o Google Sheets
+                    // Envia para o Google Sheets (se configurado)
                     if (this.config.sheetsURL) {
                         const response = await fetch(this.config.sheetsURL, {
                             method: 'POST',
@@ -892,10 +1018,11 @@
             
             // Atualiza a lista de visitas
             atualizarVisitas: function() {
-                // Simulação de carregamento
+                // Mostra o indicador de carregamento
                 const tbody = document.getElementById('visitasTableBody');
                 tbody.innerHTML = '<tr><td colspan="7" class="loading"><div class="loading-spinner"></div></td></tr>';
                 
+                // Simula um pequeno atraso para melhor experiência
                 setTimeout(() => {
                     // Ordena por data mais recente
                     const dados = [...this.config.dadosLocais].sort((a, b) => b.id - a.id);
@@ -905,7 +1032,7 @@
                     
                     // Renderiza a tabela
                     this.exibirVisitas(dados);
-                }, 800);
+                }, 300);
             },
             
             // Exibe as visitas na tabela
@@ -957,7 +1084,7 @@
                     visita.status = novoStatus;
                     localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
                     
-                    // Atualiza no Google Sheets
+                    // Atualiza no Google Sheets (se configurado)
                     if (this.config.sheetsURL) {
                         try {
                             await fetch(this.config.sheetsURL, {
@@ -988,7 +1115,7 @@
                 this.config.dadosLocais = this.config.dadosLocais.filter(v => v.id !== id);
                 localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
                 
-                // Exclui do Google Sheets
+                // Exclui do Google Sheets (se configurado)
                 if (this.config.sheetsURL) {
                     try {
                         await fetch(this.config.sheetsURL, {
