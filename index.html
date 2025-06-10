@@ -760,7 +760,15 @@
         const sistema = {
             config: {
                 sheetsURL: localStorage.getItem('sheetsURL') || '',
-                dadosLocais: JSON.parse(localStorage.getItem('dadosVisitas')) || []
+                dadosLocais: (function() {
+                    try {
+                        const dados = localStorage.getItem('dadosVisitas');
+                        return dados ? JSON.parse(dados) : [];
+                    } catch (e) {
+                        console.error('Erro ao analisar dadosVisitas do localStorage:', e);
+                        return [];
+                    }
+                })()
             },
             dadosVisitas: [],
             
@@ -1204,6 +1212,11 @@
                         });
                     }
                     
+                    // Limpa dados locais após migração
+                    this.config.dadosLocais = [];
+                    localStorage.removeItem('dadosVisitas');
+                    
+                    this.atualizarVisitas();
                     this.mostrarNotificacao('Migração concluída com sucesso!', 'success');
                 } catch (error) {
                     this.mostrarNotificacao(`Erro na migração: ${error.message}`, 'error');
@@ -1230,7 +1243,7 @@
                     
                     const dados = await response.json();
                     
-                    // Atualiza dados locais
+                    // Atualiza dados locais com os dados do servidor
                     this.config.dadosLocais = dados;
                     localStorage.setItem('dadosVisitas', JSON.stringify(dados));
                     
