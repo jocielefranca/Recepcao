@@ -815,10 +815,15 @@
                 }
                 
                 try {
-                    // Simulação de teste de conexão
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Tenta buscar dados (para testar a conexão)
+                    const response = await fetch(this.config.sheetsURL, {
+                        method: 'GET'
+                    });
                     
-                    // Em um sistema real, aqui seria uma chamada fetch para o Google Apps Script
+                    if (!response.ok) {
+                        throw new Error('Falha na conexão');
+                    }
+                    
                     document.getElementById('connectionStatus').className = 'status-connection status-online';
                     document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-circle"></i> Conectado';
                     this.mostrarNotificacao('Conexão bem-sucedida!', 'success');
@@ -830,13 +835,15 @@
             },
             
             // Adiciona uma nova visita
-            adicionarVisita: function() {
+            adicionarVisita: async function() {
                 const submitBtn = document.getElementById('submitBtn');
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
                 
                 const visita = {
                     id: Date.now(),
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    horas: new Date().toLocaleTimeString('pt-BR'),
                     nome: document.getElementById('nomeVisitante').value,
                     empresa: document.getElementById('empresaOrigem').value,
                     tipo: document.getElementById('tipoVisitante').value,
@@ -844,15 +851,28 @@
                     area: document.getElementById('areaProcurada').value,
                     responsavel: document.getElementById('responsavel').value,
                     motivo: document.getElementById('motivoVisita').value,
-                    entrada: new Date().toLocaleString('pt-BR'),
                     status: 'Aguardando'
                 };
                 
-                // Simulação de salvamento
-                setTimeout(() => {
-                    // Adiciona aos dados locais
+                try {
+                    // Salva localmente
                     this.config.dadosLocais.push(visita);
                     localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
+                    
+                    // Envia para o Google Sheets
+                    if (this.config.sheetsURL) {
+                        const response = await fetch(this.config.sheetsURL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(visita)
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Falha ao enviar para o Google Sheets');
+                        }
+                    }
                     
                     // Atualiza a tabela
                     this.atualizarVisitas();
@@ -862,10 +882,12 @@
                     
                     // Feedback para o usuário
                     this.mostrarNotificacao('Visita registrada com sucesso!', 'success');
-                    
+                } catch (error) {
+                    this.mostrarNotificacao(`Erro: ${error.message}`, 'error');
+                } finally {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-check"></i> Registrar Entrada';
-                }, 1500);
+                }
             },
             
             // Atualiza a lista de visitas
@@ -899,7 +921,7 @@
                 visitas.forEach(visita => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${visita.entrada}</td>
+                        <td>${visita.data} ${visita.horas}</td>
                         <td>${visita.nome}</td>
                         <td>${visita.tipo}</td>
                         <td>${visita.area}</td>
@@ -920,7 +942,7 @@
             // Atualiza as estatísticas na parte superior
             atualizarEstatisticas: function(visitas) {
                 const hoje = new Date().toLocaleDateString('pt-BR');
-                const visitasHoje = visitas.filter(v => v.entrada.includes(hoje));
+                const visitasHoje = visitas.filter(v => v.data === hoje);
                 
                 document.getElementById('totalHoje').textContent = visitasHoje.length;
                 document.getElementById('aguardando').textContent = visitasHoje.filter(v => v.status === 'Aguardando').length;
@@ -929,22 +951,61 @@
             },
             
             // Altera o status de uma visita
-            alterarStatusVisita: function(id, novoStatus) {
+            alterarStatusVisita: async function(id, novoStatus) {
                 const visita = this.config.dadosLocais.find(v => v.id === id);
                 if (visita) {
                     visita.status = novoStatus;
                     localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
+                    
+                    // Atualiza no Google Sheets
+                    if (this.config.sheetsURL) {
+                        try {
+                            await fetch(this.config.sheetsURL, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    action: 'update',
+                                    id: id,
+                                    status: novoStatus
+                                })
+                            });
+                        } catch (error) {
+                            this.mostrarNotificacao(`Erro ao atualizar status: ${error.message}`, 'error');
+                        }
+                    }
+                    
                     this.atualizarVisitas();
                     this.mostrarNotificacao(`Status atualizado para ${novoStatus}`, 'success');
                 }
             },
             
             // Exclui uma visita
-            excluirVisita: function(id) {
+            excluirVisita: async function(id) {
                 if (!confirm('Tem certeza que deseja excluir esta visita?')) return;
                 
                 this.config.dadosLocais = this.config.dadosLocais.filter(v => v.id !== id);
                 localStorage.setItem('dadosVisitas', JSON.stringify(this.config.dadosLocais));
+                
+                // Exclui do Google Sheets
+                if (this.config.sheetsURL) {
+                    try {
+                        await fetch(this.config.sheetsURL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                action: 'delete',
+                                id: id
+                            })
+                        });
+                    } catch (error) {
+                        this.mostrarNotificacao(`Erro ao excluir visita: ${error.message}`, 'error');
+                    }
+                }
+                
                 this.atualizarVisitas();
                 this.mostrarNotificacao('Visita excluída!', 'success');
             },
@@ -968,7 +1029,7 @@
             atualizarDashboard: function() {
                 const dados = this.config.dadosLocais;
                 const hoje = new Date().toLocaleDateString('pt-BR');
-                const visitasHoje = dados.filter(v => v.entrada.includes(hoje));
+                const visitasHoje = dados.filter(v => v.data === hoje);
                 
                 document.getElementById('dashTotalVisitantes').textContent = visitasHoje.length;
                 document.getElementById('dashVisitantesConcluidos').textContent = visitasHoje.filter(v => v.status === 'Concluído').length;
@@ -996,33 +1057,67 @@
             },
             
             // Migra dados locais para o servidor
-            migrarDadosLocais: function() {
+            migrarDadosLocais: async function() {
                 if (this.config.dadosLocais.length === 0) {
                     this.mostrarNotificacao('Nenhum dado local para migrar.', 'info');
                     return;
                 }
                 
-                // Simulação de migração
-                this.mostrarNotificacao(`Migrando ${this.config.dadosLocais.length} registros...`, 'success');
-                
-                setTimeout(() => {
-                    // Aqui seria a chamada para o Google Sheets
-                    this.config.dadosLocais = [];
-                    localStorage.removeItem('dadosVisitas');
-                    this.atualizarVisitas();
+                try {
+                    this.mostrarNotificacao(`Migrando ${this.config.dadosLocais.length} registros...`, 'success');
+                    
+                    // Envia cada visita local para o Google Sheets
+                    for (const visita of this.config.dadosLocais) {
+                        await fetch(this.config.sheetsURL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(visita)
+                        });
+                    }
+                    
                     this.mostrarNotificacao('Migração concluída com sucesso!', 'success');
-                }, 2000);
+                } catch (error) {
+                    this.mostrarNotificacao(`Erro na migração: ${error.message}`, 'error');
+                }
             },
             
             // Sincroniza dados
-            sincronizarDados: function() {
-                this.mostrarNotificacao('Sincronizando dados com o Google Sheets...', 'success');
+            sincronizarDados: async function() {
+                if (!this.config.sheetsURL) {
+                    this.mostrarNotificacao('URL do Google Sheets não configurada.', 'error');
+                    return;
+                }
                 
-                setTimeout(() => {
+                try {
+                    this.mostrarNotificacao('Sincronizando dados com o Google Sheets...', 'success');
+                    
+                    const response = await fetch(this.config.sheetsURL, {
+                        method: 'GET'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Falha ao sincronizar dados');
+                    }
+                    
+                    const dados = await response.json();
+                    
+                    // Atualiza dados locais
+                    this.config.dadosLocais = dados;
+                    localStorage.setItem('dadosVisitas', JSON.stringify(dados));
+                    
+                    // Atualiza a tabela
+                    this.atualizarVisitas();
+                    
+                    // Atualiza status de sincronização
                     document.getElementById('lastSync').textContent = new Date().toLocaleString('pt-BR');
-                    document.getElementById('totalRecords').textContent = this.config.dadosLocais.length;
+                    document.getElementById('totalRecords').textContent = dados.length;
+                    
                     this.mostrarNotificacao('Sincronização concluída!', 'success');
-                }, 1500);
+                } catch (error) {
+                    this.mostrarNotificacao(`Erro na sincronização: ${error.message}`, 'error');
+                }
             },
             
             // Atualiza status de sincronização
@@ -1074,52 +1169,6 @@
         // Inicia o sistema quando a página carregar
         window.addEventListener('DOMContentLoaded', () => {
             sistema.init();
-            
-            // Carrega dados de exemplo
-            setTimeout(() => {
-                if (sistema.config.dadosLocais.length === 0) {
-                    sistema.config.dadosLocais = [
-                        {
-                            id: 1,
-                            nome: "Carlos Silva",
-                            empresa: "Tech Solutions",
-                            tipo: "Fornecedor",
-                            telefone: "(11) 98765-4321",
-                            area: "TI/Tecnologia",
-                            responsavel: "Ana Paula",
-                            motivo: "Reunião sobre servidores",
-                            entrada: new Date().toLocaleString('pt-BR'),
-                            status: "Aguardando"
-                        },
-                        {
-                            id: 2,
-                            nome: "Mariana Oliveira",
-                            empresa: "Global Corp",
-                            tipo: "Cliente",
-                            telefone: "(11) 91234-5678",
-                            area: "Vendas/Comercial",
-                            responsavel: "Roberto Santos",
-                            motivo: "Negociação de contrato",
-                            entrada: new Date().toLocaleString('pt-BR'),
-                            status: "Em Atendimento"
-                        },
-                        {
-                            id: 3,
-                            nome: "Ricardo Fernandes",
-                            empresa: "InovaTech",
-                            tipo: "Parceiro",
-                            telefone: "(11) 99876-5432",
-                            area: "Marketing",
-                            responsavel: "Juliana Costa",
-                            motivo: "Planejamento campanha",
-                            entrada: new Date().toLocaleString('pt-BR'),
-                            status: "Concluído"
-                        }
-                    ];
-                    localStorage.setItem('dadosVisitas', JSON.stringify(sistema.config.dadosLocais));
-                    sistema.atualizarVisitas();
-                }
-            }, 2000);
         });
     </script>
 </body>
